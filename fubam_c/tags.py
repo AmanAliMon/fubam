@@ -1,1994 +1,396 @@
-def div(*args):
-    attributes = " "
-    body = ""
-    phyla = "div"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"    </{phyla}>" if closings else ""}'     
+from .optHelper import *
+# Config:
+Performance= True
+SEO = True
+Accessibility = True
 
+InjectCSS = False
+InjectJS = False
 
-def img(*args):
-    attributes = " "
-    body = ""
-    phyla = "img"
-    closings = True
+MinifyStyleTags = True
+MinifyScriptTags = True
+
+# Helpers:
+tagIterarions = 0
+titlebool = False
+
+if SEO:
+    SEOtags = {
+        "meta":[{"name":["viewport",True,'<meta name="viewport" content="width=device-width, initial-scale=1.0">']},
+        {"name":["description",True,'<meta name="description" content="This is a descriptio with random text to maintain your seo level">']},
+        {"http-equiv":["X-UA-Compatible",True,'<meta http-equiv="X-UA-Compatible" content="ie=edge">']},
+        {"name":["keywords",True,'<meta name="keywords" content="some,random,keywords">']},
+        {"http-equiv":["Content-Type",True,'<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">']}]
+       }
+
+def initTags(attributes,body,phyla,closings,*args):
+ try:
+    global tagIterarions
+    if(phyla == "html"):
+        body = body
+        body += makeSEOtags()
+    y = False
+    scriptsy = False
+    skipper = False
+    if phyla == "link":
+        href = ""
+    if phyla == "script":
+        src = ""
     for arg in args:
         if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
+            if(SEO and phyla in SEOtags):
+                for key, value in arg.items():
+                    attributes += f" {key}=\"{value}\""
+                    for t in SEOtags[phyla]:
+                        if key in t:
+                            if value == t[key][0]:
+                                t[key][1] = False
+            else:
+                for key, value in arg.items():
+                    attributes += f" {key}=\"{value}\""
+                    if phyla == "img" and not "alt" in  attributes and Accessibility:
+                        attributes += f" alt=\"There was an image\""
+                    if key == "href":
+                        href = value
+                    if key == "src":
+                        src = value
+                    if phyla == "link" and key == "rel":
+                        if value == "stylesheet":
+                            print(value,href,key)
+                            y = True        
+                    if phyla == "script":
+                        print(value,src,key)
+                        scriptsy = True        
         elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
+            body += f"{cssmin(arg) if phyla == 'style' and MinifyStyleTags else jsmin(arg) if phyla == 'script' and MinifyScriptTags else arg}"
         elif isinstance(arg,list):
             for ar in arg:
-                body += f"  {ar}\n"
+                body += f"{cssmin(ar) if phyla == 'style' and MinifyStyleTags else jsmin(ar) if phyla == 'script' and MinifyScriptTags else ar}"
+        elif isinstance(arg,iterationSkipper):
+            skipper = True
         else:
             TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
-def nav(*args):
-    attributes = " "
-    body = ""
-    phyla = "nav"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
-def hr(*args):
-    attributes = " "
-    body = ""
-    phyla = "hr"
-    closings = False
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    if(not skipper):
+        tagIterarions += 1
+    global InjectCSS
+    if(y) and  InjectCSS:
+            return "<style>" + (open(href).read() if not MinifyStyleTags else cssmin(open(href).read()))+ "</style>"
+    global InjectJS
+    if(scriptsy) and  InjectJS:
+            return "<script>" + (open(src).read() if not MinifyScriptTags else jsmin(open(src).read()))+ "</script>"
+    return f'{"<!DOCTYPE html>" if phyla == "html" and Accessibility else "" }<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+ except Exception as e:
+    print(e)
+    return "Exception at element " + phyla
+
 def a(*args):
-    attributes = " "
-    body = ""
-    phyla = "a"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "a", True,*args)
 def abbr(*args):
-    attributes = " "
-    body = ""
-    phyla = "abbr"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "abbr", True,*args)
+
 def address(*args):
-    attributes = " "
-    body = ""
-    phyla = "address"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "address", True,*args)
+   
 def area(*args):
-    attributes = " "
-    body = ""
-    phyla = "area"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "area", True,*args)
+
 def article(*args):
-    attributes = " "
-    body = ""
-    phyla = "article"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "article", True,*args)
+   
 def aside(*args):
-    attributes = " "
-    body = ""
-    phyla = "aside"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "aside", True,*args)
+ 
 def audio(*args):
-    attributes = " "
-    body = ""
-    phyla = "audio"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "audio", True,*args)
+ 
 def b(*args):
-    attributes = " "
-    body = ""
-    phyla = "b"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "b", True,*args)
 def base(*args):
-    attributes = " "
-    body = ""
-    phyla = "base"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "base", True,*args)
+
 def bdi(*args):
-    attributes = " "
-    body = ""
-    phyla = "bdi"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "bdi", True,*args)
 def bdo(*args):
-    attributes = " "
-    body = ""
-    phyla = "bdo"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "bdo", True,*args)
 def blockquote(*args):
-    attributes = " "
-    body = ""
-    phyla = "blockquote"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "blockquote", True,*args)
+   
 def body(*args):
-    attributes = " "
-    body = ""
-    phyla = "body"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "body", True,*args)
+
 def br(*args):
-    attributes = " "
-    body = ""
-    phyla = "br"
-    closings = False
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "br", False,*args)
 def button(*args):
-    attributes = " "
-    body = ""
-    phyla = "button"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "button", True,*args)
+  
 def canvas(*args):
-    attributes = " "
-    body = ""
-    phyla = "canvas"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "canvas", True,*args)
+  
 def caption(*args):
-    attributes = " "
-    body = ""
-    phyla = "caption"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "caption", True,*args)
+   
 def cite(*args):
-    attributes = " "
-    body = ""
-    phyla = "cite"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "cite", True,*args)
+
 def code(*args):
-    attributes = " "
-    body = ""
-    phyla = "code"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "code", True,*args)
+
 def col(*args):
-    attributes = " "
-    body = ""
-    phyla = "col"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "col", True,*args)
 def colgroup(*args):
-    attributes = " "
-    body = ""
-    phyla = "colgroup"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "colgroup", True,*args)
+   
 def data(*args):
-    attributes = " "
-    body = ""
-    phyla = "data"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "data", True,*args)
+
 def datalist(*args):
-    attributes = " "
-    body = ""
-    phyla = "datalist"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "datalist", True,*args)
+   
 def dd(*args):
-    attributes = " "
-    body = ""
-    phyla = "dd"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "dd", True,*args)
 def details(*args):
-    attributes = " "
-    body = ""
-    phyla = "details"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "details", True,*args)
+   
 def dfn(*args):
-    attributes = " "
-    body = ""
-    phyla = "dfn"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "dfn", True,*args)
 def dialog(*args):
-    attributes = " "
-    body = ""
-    phyla = "dialog"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "dialog", True,*args)
+  
 def div(*args):
-    attributes = " "
-    body = ""
-    phyla = "div"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "div", True,*args)
 def dl(*args):
-    attributes = " "
-    body = ""
-    phyla = "dl"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "dl", True,*args)
 def dt(*args):
-    attributes = " "
-    body = ""
-    phyla = "dt"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "dt", True,*args)
 def em(*args):
-    attributes = " "
-    body = ""
-    phyla = "em"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "em", True,*args)
 def embed(*args):
-    attributes = " "
-    body = ""
-    phyla = "embed"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "embed", True,*args)
+ 
 def fieldset(*args):
-    attributes = " "
-    body = ""
-    phyla = "fieldset"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "fieldset", True,*args)
+   
 def figcaption(*args):
-    attributes = " "
-    body = ""
-    phyla = "figcaption"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "figcaption", True,*args)
+   
 def figure(*args):
-    attributes = " "
-    body = ""
-    phyla = "figure"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "figure", True,*args)
+  
 def footer(*args):
-    attributes = " "
-    body = ""
-    phyla = "footer"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "footer", True,*args)
+  
 def form(*args):
-    attributes = " "
-    body = ""
-    phyla = "form"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "form", True,*args)
+
 def h1(*args):
-    attributes = " "
-    body = ""
-    phyla = "h1"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "h1", True,*args)
 def h2(*args):
-    attributes = " "
-    body = ""
-    phyla = "h2"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "h2", True,*args)
 def h3(*args):
-    attributes = " "
-    body = ""
-    phyla = "h3"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "h3", True,*args)
 def h4(*args):
-    attributes = " "
-    body = ""
-    phyla = "h4"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "h4", True,*args)
 def h5(*args):
-    attributes = " "
-    body = ""
-    phyla = "h5"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "h5", True,*args)
 def h6(*args):
-    attributes = " "
-    body = ""
-    phyla = "h6"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "h6", True,*args)
 def head(*args):
-    attributes = " "
-    body = ""
-    phyla = "head"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "head", True,*args,iterationSkipper())
+
 def header(*args):
-    attributes = " "
-    body = ""
-    phyla = "header"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "header", True,*args)
+  
 def hgroup(*args):
-    attributes = " "
-    body = ""
-    phyla = "hgroup"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "hgroup", True,*args)
+  
 def hr(*args):
-    attributes = " "
-    body = ""
-    phyla = "hr"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "hr", False,*args)
 def html(*args):
-    attributes = " "
-    body = ""
-    phyla = "html"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "html", True,*args,{"lang":"en"} if Accessibility else "",iterationSkipper())
+
 def i(*args):
-    attributes = " "
-    body = ""
-    phyla = "i"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "i", True,*args)
 def iframe(*args):
-    attributes = " "
-    body = ""
-    phyla = "iframe"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "iframe", True,*args)
+  
 def img(*args):
-    attributes = " "
-    body = ""
-    phyla = "img"
-    closings = False
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "" if not Performance else " loading=\"lazy\"", "", "img", False,*args)
 def inp(*args):
-    attributes = " "
-    body = ""
-    phyla = "input"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "input", True,*args)
 def ins(*args):
-    attributes = " "
-    body = ""
-    phyla = "ins"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "ins", True,*args)
 def kbd(*args):
-    attributes = " "
-    body = ""
-    phyla = "kbd"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "kbd", True,*args)
 def keygen(*args):
-    attributes = " "
-    body = ""
-    phyla = "keygen"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "keygen", True,*args)
+  
 def label(*args):
-    attributes = " "
-    body = ""
-    phyla = "label"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "label", True,*args)
+ 
 def legend(*args):
-    attributes = " "
-    body = ""
-    phyla = "legend"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "legend", True,*args)
+  
 def li(*args):
-    attributes = " "
-    body = ""
-    phyla = "li"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "li", True,*args)
 def link(*args):
-    attributes = " "
-    body = ""
-    phyla = "link"
-    closings = False
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "link", False,*args)
 def main(*args):
-    attributes = " "
-    body = ""
-    phyla = "main"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "main", True,*args)
+
 def _map(*args):
-    attributes = " "
-    body = ""
-    phyla = "map"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "map", True,*args)
+
 def mark(*args):
-    attributes = " "
-    body = ""
-    phyla = "mark"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "mark", True,*args)
+
 def menu(*args):
-    attributes = " "
-    body = ""
-    phyla = "menu"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "menu", True,*args)
+
 def menuitem(*args):
-    attributes = " "
-    body = ""
-    phyla = "menuitem"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "menuitem", True,*args)
+   
 def meta(*args):
-    attributes = " "
-    body = ""
-    phyla = "meta"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "meta", False,*args,iterationSkipper())
+
 def meter(*args):
-    attributes = " "
-    body = ""
-    phyla = "meter"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "meter", True,*args)
+ 
 def nav(*args):
-    attributes = " "
-    body = ""
-    phyla = "nav"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "nav", True,*args)
 def noscript(*args):
-    attributes = " "
-    body = ""
-    phyla = "noscript"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "noscript", True,*args)
+   
 def obj(*args):
-    attributes = " "
-    body = ""
-    phyla = "obj"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "obj", True,*args)
 def ol(*args):
-    attributes = " "
-    body = ""
-    phyla = "ol"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "ol", True,*args)
 def optgroup(*args):
-    attributes = " "
-    body = ""
-    phyla = "optgroup"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "optgroup", True,*args)
+   
 def option(*args):
-    attributes = " "
-    body = ""
-    phyla = "option"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "option", True,*args)
+  
 def output(*args):
-    attributes = " "
-    body = ""
-    phyla = "output"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "output", True,*args)
+  
 def p(*args):
-    attributes = " "
-    body = ""
-    phyla = "p"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "p", True,*args)
 def param(*args):
-    attributes = " "
-    body = ""
-    phyla = "param"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "param", True,*args)
+ 
 def picture(*args):
-    attributes = " "
-    body = ""
-    phyla = "picture"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "picture", True,*args)
+   
 def pre(*args):
-    attributes = " "
-    body = ""
-    phyla = "pre"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "pre", True,*args)
 def progress(*args):
-    attributes = " "
-    body = ""
-    phyla = "progress"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "progress", True,*args)
+   
 def q(*args):
-    attributes = " "
-    body = ""
-    phyla = "q"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "q", True,*args)
 def rb(*args):
-    attributes = " "
-    body = ""
-    phyla = "rb"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "rb", True,*args)
 def rp(*args):
-    attributes = " "
-    body = ""
-    phyla = "rp"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "rp", True,*args)
 def rt(*args):
-    attributes = " "
-    body = ""
-    phyla = "rt"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "rt", True,*args)
 def rtc(*args):
-    attributes = " "
-    body = ""
-    phyla = "rtc"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "rtc", True,*args)
 def ruby(*args):
-    attributes = " "
-    body = ""
-    phyla = "ruby"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "ruby", True,*args)
+
 def s(*args):
-    attributes = " "
-    body = ""
-    phyla = "s"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "s", True,*args)
 def samp(*args):
-    attributes = " "
-    body = ""
-    phyla = "samp"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "samp", True,*args)
+
 def script(*args):
-    attributes = " "
-    body = ""
-    phyla = "script"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "script", True,*args)
+  
 def section(*args):
-    attributes = " "
-    body = ""
-    phyla = "section"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "section", True,*args)
+   
 def select(*args):
-    attributes = " "
-    body = ""
-    phyla = "select"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "select", True,*args)
+  
 def small(*args):
-    attributes = " "
-    body = ""
-    phyla = "small"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "small", True,*args)
+ 
 def source(*args):
-    attributes = " "
-    body = ""
-    phyla = "source"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "source", True,*args)
+  
 def span(*args):
-    attributes = " "
-    body = ""
-    phyla = "span"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "span", True,*args)
+
 def strong(*args):
-    attributes = " "
-    body = ""
-    phyla = "strong"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "strong", True,*args)
+  
 def style(*args):
-    attributes = " "
-    body = ""
-    phyla = "style"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "style", True,*args)
+ 
 def sub(*args):
-    attributes = " "
-    body = ""
-    phyla = "sub"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "sub", True,*args)
 def summary(*args):
-    attributes = " "
-    body = ""
-    phyla = "summary"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "summary", True,*args)
+   
 def sup(*args):
-    attributes = " "
-    body = ""
-    phyla = "sup"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "sup", True,*args)
 def table(*args):
-    attributes = " "
-    body = ""
-    phyla = "table"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "table", True,*args)
+ 
 def tbody(*args):
-    attributes = " "
-    body = ""
-    phyla = "tbody"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "tbody", True,*args)
+ 
 def td(*args):
-    attributes = " "
-    body = ""
-    phyla = "td"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "td", True,*args)
 def template(*args):
-    attributes = " "
-    body = ""
-    phyla = "template"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "template", True,*args)
+   
 def textarea(*args):
-    attributes = " "
-    body = ""
-    phyla = "textarea"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "textarea", True,*args)
+   
 def tfoot(*args):
-    attributes = " "
-    body = ""
-    phyla = "tfoot"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "tfoot", True,*args)
 def th(*args):
-    attributes = " "
-    body = ""
-    phyla = "th"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "th", True,*args)
 def thead(*args):
-    attributes = " "
-    body = ""
-    phyla = "thead"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "thead", True,*args)
 def time(*args):
-    attributes = " "
-    body = ""
-    phyla = "time"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "time", True,*args)
 def title(*args):
-    attributes = " "
-    body = ""
-    phyla = "title"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    global titlebool
+    titlebool = True
+    return initTags( "", "", "title", True,*args,iterationSkipper())
 def tr(*args):
-    attributes = " "
-    body = ""
-    phyla = "tr"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "tr", True,*args)
 def track(*args):
-    attributes = " "
-    body = ""
-    phyla = "track"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "track", True,*args)
 def u(*args):
-    attributes = " "
-    body = ""
-    phyla = "u"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "u", True,*args)
 def ul(*args):
-    attributes = " "
-    body = ""
-    phyla = "ul"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "ul", True,*args)
 def video(*args):
-    attributes = " "
-    body = ""
-    phyla = "video"
-    closings = True
-    for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
-        elif isinstance(arg,list):
-            for ar in arg:
-                body += f"  {ar}\n"
-        else:
-            TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return initTags( "", "", "video", True,*args)
 def wbr(*args):
-    attributes = " "
-    body = ""
-    phyla = "wbr"
-    closings = True
+    return initTags( "", "", "wbr", True,*args)
+def wrapper(*args):
     for arg in args:
-        if isinstance(arg, dict):
-            for key, value in arg.items():
-                attributes += f"{key}=\"{value}\" "
-        elif isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
-            body += f"  {arg}\n"
+        body = ""
+        if isinstance(arg, str) or isinstance(arg,int) or isinstance(arg,float):
+            body += f"{cssmin(arg)}"
         elif isinstance(arg,list):
             for ar in arg:
-                body += f"  {ar}\n"
+                body += f"{cssmin(ar)}"
         else:
             TypeError(f"{arg} of type `{type(arg)}` is not useable!")
-    return f'<{phyla}{attributes}>{body}{f"</{phyla}>" if closings else ""}'     
+    return body
+def makeSEOtags():
+    returntags  = ""
+    for i in SEOtags.keys():
+        for attr in SEOtags[i]:
+            for obj in attr.values():
+                if obj[1]:
+                    returntags += obj[2]
+    if not titlebool:
+        returntags += "<title>Page Title</title>"
+    return returntags
