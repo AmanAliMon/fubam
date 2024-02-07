@@ -262,11 +262,11 @@ This features is built to minize the code inside Style/Script tag and save reque
 As fubam uses cssmin and rjsmin libraries you can compress your CSS/JS files from fubam.
 
 ```python
-compressCSSFiles("style.css")
-compressJSFiles("script.js")
+compressCSSFile("style.css")
+compressJSFile("script.js")
 ```
 The first function will in result make a file with name style.min.css and the other function will outputs a file with name script.min.js within the same directory you can specify directory and name as an argument e.g.
 
 ```python
-compressCSSFiles("style.css","dist/main.css")
+compressCSSFile("style.css","dist/main.css")
 ```
