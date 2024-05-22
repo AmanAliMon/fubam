@@ -1,7 +1,7 @@
 # Fubam
-### First python frontend framework
+### Best python frontend generator 
 
-- **Version** : 1.1 initial release
+- **Version** : 1.3 stable release
 - **Release** : 05 February 2024
 - **Author** : Aman Ali
 
