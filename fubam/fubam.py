@@ -1,5 +1,5 @@
 import os
-from .optHelper import *
+from .optHelper import codeInjector,cssmin,jsmin
 
 class iterationSkipper:
     def __init__(self):
@@ -10,18 +10,19 @@ class Fubam:
     def __init__(
         self,
         template_dir="templates",
-        *,
         SEO=False,
         Accessibility=False,
         Performance=False,
         InjectCSS=False,
         InjectJS=False,
         MinifyStyleTags=True,
-        MinifyScriptTags=True,
+        MinifyScriptTags=True, 
+        Debug=True
     ):
         # Template rendering
         self.FUBAM_TEMPLATES_DIR = template_dir
         self.titlebool = False
+        self.Debug = Debug
         # Optimization settings
         self.SEO = SEO
         self.Accessibility = Accessibility
@@ -76,7 +77,7 @@ class Fubam:
 
     def makeSEOtags(self):
         if not self.SEO:
-            return ""  # <-- Nothing is injected if SEO is disabled
+            return ""
     
         __tags = ""
         for tagtype in self.SEOtags:
@@ -88,10 +89,20 @@ class Fubam:
             __tags += "<title>Page Title</title>"
         return __tags
 
-
+    class Raw(str): # Behaves like string but sign strings as trusted
+        def __new__(cls, value):
+            return super().__new__(cls, value)
+    def escape(self,s, quote=False):
+            s = s.replace("&", "&amp;")
+            s = s.replace("<", "&lt;")
+            s = s.replace(">", "&gt;")
+            if quote:
+                s = s.replace('"', "&quot;")
+                s = s.replace('\'', "&#x27;")
+            return self.Raw(s)
     def initTags(self, attributes, body, phyla, closings, *args):
-        tagIterarions = 0
-        try:
+            tagIterarions = 0
+        # try:
             if phyla == "html":
                 body += self.makeSEOtags()
 
@@ -130,14 +141,24 @@ class Fubam:
                                 y = True
                             if phyla == "script" and key == "src":
                                 scriptsy = True
-
-                elif isinstance(arg, (str, int, float)):
+                elif isinstance(arg, (self.Raw)):
                      if phyla == "style" and self.MinifyStyleTags:
                          body += cssmin(str(arg))
                      elif phyla == "script" and self.MinifyScriptTags:
                          body += jsmin(str(arg))
                      else:
                         body += str(arg)
+
+                elif isinstance(arg, (str, int, float)):
+                     
+                     if phyla == "style" and self.MinifyStyleTags:
+                         body += cssmin(str((arg)))
+                     elif phyla == "script" and self.MinifyScriptTags:
+                         body += jsmin(str((arg)))
+                     else:
+                        body += str(self.escape(arg))
+
+
 
                 elif isinstance(arg, list):
                     for ar in arg:
@@ -146,7 +167,7 @@ class Fubam:
                              elif phyla == "script" and self.MinifyScriptTags:
                                  body += jsmin(str(ar))
                              else:
-                               body += str(ar)
+                               body += self.escape(str(ar))
 
                 elif isinstance(arg, iterationSkipper):
                     skipper = True
@@ -167,17 +188,33 @@ class Fubam:
                      content = f.read()
                 return f"<script>{jsmin(content) if self.MinifyScriptTags else content}</script>"
 
-            return (
+            return self.Raw(
                 f'{"<!DOCTYPE html>" if phyla == "html" and self.Accessibility else ""}'
                 f"<{phyla}{attributes}{f'' if closings else '/'}>{body if closings else ''}{f'</{phyla}>' if closings else ''}"
             )
 
-        except Exception as e:
-            print(e)
-            return f"Exception at element <{phyla}>"
-    
+        #except Exception as e:
+    #         if self.Debug:
+    #             raise TypeError(
+    #             f"[Fubam:initTags] Invalid arg {arg!r} ({type(arg)}) "
+    #             f"in <{phyla}>"
+    #             )
+    #         else:
+    #             print(
+    #                 f"Fubam Warning: Ignored invalid arg {arg!r} "
+    #                 f"in <{phyla}>"
+    # )
+                
+    #             print(e)
+    #             return f"Exception at element <{phyla}>"
+
+
     def tags(self):
+
         return {
+            "__title__":None,
+            "raw":self.Raw,
+            "escape":self.escape,
             "a" : lambda *args: self.initTags( "", "", "a", True,*args),
             "abbr" : lambda *args: self.initTags( "", "", "abbr", True,*args),
 
@@ -354,10 +391,17 @@ class Fubam:
             "wbr" : lambda *args: self.initTags( "", "", "wbr", True,*args),
     "wrapper": lambda *args: "".join(map(str, args)),
 
+"sub": lambda *args: self.initTags("", "", "sub", True, *args),
+
+"title": lambda *args, _called=[False]: (
+    (_called.__setitem__(0, True) or
+     self.initTags("", "", "title", True, *args, iterationSkipper())
+    ) if not _called[0] else (print("Fubam Warning: Title already exists") or "")
+),
 "title": lambda *args: (
-    (globals().__setitem__(self,'titlebool', True)) or
-    self.initTags("", "", "title", True, *args, iterationSkipper())
+    self.initTags("", "", "title", True, *(arg for arg in args if arg is not None), iterationSkipper())
 )
+
 
             }
 
@@ -373,8 +417,24 @@ class Fubam:
         useComponent,"useLayout":self.useLayout})
         with open(os.path.join(self.FUBAM_TEMPLATES_DIR, f"{path}.pmx"), "r") as file:
             file_content = file.read()
-            exec(file_content, file_namespace)
-        return file_namespace.get("Export")
+            import traceback
+
+            try:
+                code = compile(
+                file_content,
+                filename=f"{path}.pmx",
+                mode="exec"
+    )
+                exec(code, file_namespace)
+            except Exception:
+                print(
+        "\nFubam Template Error\n"
+        f"File: {path}.pmx\n"
+        f"{traceback.format_exc()}"
+    )
+                return "Error"
+
+        return file_namespace.get("Export") or "Error"
     def useComponent(self, path, resources={}):
         file_namespace = resources.copy()
         file_namespace.update(self.tags())

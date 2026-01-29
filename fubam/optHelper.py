@@ -668,12 +668,6 @@ def recieveContent(file,callback=passc):
     print(open(file).read())
     callback()
 
-
-class iterationSkipper:
-    def __init__(self):
-        self.function = "skipping iteration"
-
-
 # class iterationSucker:
 #     def __init__(self,x):
 #         img
