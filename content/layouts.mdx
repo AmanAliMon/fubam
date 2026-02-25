@@ -1,0 +1,119 @@
+# Layouts
+Layouts in Fubam provide a **reusable page structure** that can be shared across multiple templates.
+They help maintain **consistency** and **reduce repetition** by defining common elements like headers, footers, and main containers in one place.
+
+Fubam layouts work by letting templates **inject content** into predefined placeholders.
+
+---
+
+## 1. Layout Folder Structure
+
+It’s recommended to organize layouts in a separate folder:
+
+```
+Templates/
+├── layouts/
+│   └── base.pmx
+└── pages/
+    └── home.pmx
+```
+
+* `layouts/` contains all reusable layout files
+* `pages/` contains templates that use these layouts
+
+---
+
+## 2. Creating a Layout
+
+A layout is a `.pmx` file that defines the **common structure** for multiple pages.
+
+**Example: `base.pmx`**
+
+```python
+# Templates/layouts/base.pmx
+
+Export = HTML(
+    head(
+        title(page_title if "page_title" in globals() else "My Fubam Site"),
+        meta(charset="UTF-8")
+    ),
+    body(
+        header(
+            h1("Site Header"),
+            nav(
+                a("Home", href="/"),
+                a("About", href="/about")
+            )
+        ),
+        main(__content__),  # Placeholder for page-specific content
+        footer(
+            p("© 2025 Fubam")
+        )
+    )
+)
+```
+
+**Notes:**
+
+* `__content__` is a special variable where the page template’s content will be injected
+* You can define any number of placeholders for flexibility (e.g. __content__.var1,__content__.var2)
+* Layouts can use Python logic to dynamically adjust content
+
+---
+
+## 3. Using a Layout in a Page
+
+In your page template, you reference the layout and provide the content:
+
+**Example: `home.pmx`**
+
+```python
+# Templates/pages/home.pmx
+
+page_title = "Home Page"
+
+Export = useLayout("base.pmx", content=wrapper(h2("Welcome to Fubam!"),
+    p("This page uses a layout for consistent structure.")
+)) # Wrapper is a function that binds the scattered tags together (equivalent to jsx <></>)
+```
+
+* `useLayout("base.pmx", content=...)` tells Fubam to render the layout first
+* The `content` variable inside the layout is replaced with the page’s HTML
+
+---
+
+## 4. Dynamic Variables in Layouts
+
+You can pass additional variables to layouts through the template:
+
+```python
+page_title = "About Page"
+user_name = "Aman"
+
+Export = layout("base.pmx", content=HTML(
+    h2(f"Welcome, {user_name}!"),
+    p("This page uses the base layout.")
+))
+```
+
+* Variables defined in the page are accessible in the layout
+* This allows dynamic titles, navigation highlights, or personalized content
+
+---
+
+## 5. Best Practices
+
+* Keep layouts **generic and reusable**
+* Use **placeholders** for all dynamic content areas
+* Avoid hardcoding page-specific content in the layout
+* Organize layouts in a dedicated folder (`Templates/layouts/`)
+* Use Python logic carefully to maintain readability
+
+---
+
+## Summary
+
+* Layouts define **common page structure** (header, footer, main)
+* Templates **inject content** into layouts via placeholders
+* Use variables to pass dynamic data from page to layout
+* Layouts improve **maintainability** and **consistency**

@@ -1,0 +1,140 @@
+# Core Concepts
+
+Fubam is designed to be **simple, fast, and Pythonic**.
+Understanding the core concepts will help you use templates, layouts, and components effectively.
+
+---
+
+## 1. Templates
+
+A **template** in Fubam is a `.pmx` file written in **pure Python**.
+Instead of writing angle-bracket HTML, you use predefined functions for HTML tags:
+
+* `HTML()`, `div()`, `span()`, `h1()`, `p()`, `head()`, `body()`, etc.
+
+### Key Points
+
+* Every template **must define an `Export` variable**.
+  This is what Fubam converts into the final HTML string.
+* You can use **Python variables, loops, conditions, and functions** inside templates.
+* Optional `resources` allow you to pass variables or functions from Python code into the template.
+
+**Example:**
+
+```python
+# Templates/home.pmx
+
+title = "Welcome to Fubam"
+
+Export = HTML(
+    head(
+        title(title)
+    ),
+    body(
+        h1(title),
+        p("This page is rendered using pure Python templates."),
+    )
+)
+```
+
+---
+
+## 2. Rendering Flow
+
+When you call `compiler.renderTemplate("home.pmx")`:
+
+1. Fubam loads the `.pmx` file from the template directory.
+2. It executes the file in a **sandboxed Python environment**.
+3. The value of `Export` is converted into **HTML string output**.
+4. The returned string can be used with **any server** (Flask, FastAPI, Django, static files, etc.)
+
+**Example:**
+
+```python
+html = compiler.renderTemplate("home.pmx", resources={"name": "Pakistan"})
+print(html)
+```
+
+---
+
+## 3. Layouts
+
+**Layouts** provide a **reusable page structure** for multiple templates.
+
+* They define sections like `header`, `footer`, or `main content`.
+* Templates can **extend layouts** and fill content blocks.
+* This prevents repetition and keeps templates consistent.
+
+**Example Conceptual Structure:**
+
+```
+Templates/
+├── layouts/
+│   └── base.pmx
+└── pages/
+    └── home.pmx
+```
+
+* `base.pmx` defines common structure (header/footer)
+* `home.pmx` injects its content into the layout
+
+---
+
+## 4. Components
+
+**Components** are **smaller reusable pieces** of templates.
+
+* They can represent buttons, cards, menus, or any UI block.
+* Components receive **data or resources** from the template using Fubam functions.
+* Components are **composable**, making templates modular and maintainable.
+
+**Example Conceptual Use:**
+
+```python
+# Templates/components/card.pmx
+Export = div(
+    h2(title),
+    p(description)
+)
+```
+
+Then used in a page template:
+
+```python
+Export = HTML(
+    card(title="Hello", description="Reusable component example")
+)
+```
+
+---
+
+## 5. Static Compilation (Future)
+
+Fubam plans to include `fubam translate`, which will:
+
+* Generate static HTML from `.pmx` files
+* Improve performance by pre-rendering pages
+* Allow integration with static-site workflows
+
+Currently, templates are **rendered at runtime**, but static compilation is in development.
+
+---
+
+## 6. Accessibility & SEO
+
+Fubam automatically improves generated HTML:
+
+* Injects **basic SEO metadata** for better indexing
+* Adds small **accessibility enhancements**
+* Note: Fubam **does not automatically add ARIA roles** or full accessibility compliance; developers must handle advanced accessibility.
+
+---
+
+### ✅ Summary
+
+* `.pmx` templates = pure Python + predefined tag functions
+* `Export` variable = required HTML output
+* Layouts = reusable page structures
+* Components = modular, reusable blocks
+* Rendered output = plain string usable with any server
+* Future: static compilation (`fubam translate`)
